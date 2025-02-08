@@ -8,11 +8,27 @@
 import SwiftUI
 
 struct HistoryScreen: View {
+    
+    @EnvironmentObject var jobManager: JobQueueManager
+    
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        List {
+            ForEach(jobManager.history) { item in
+                NavigationLink {
+                    ResultsView(job: item)
+                } label: {
+                    HStack {
+                        Text(item.text)
+                        Spacer()
+                        Text(item.executionTime.description)
+                    }
+                }
+            }
+        }
     }
 }
 
 #Preview {
     HistoryScreen()
+        .environmentObject(JobQueueManager())
 }

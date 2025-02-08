@@ -1,14 +1,26 @@
+//
+//  JobQueueManager.swift
+//  OTUSDZSUFFIX
+//
+//  Created by Вячеслав Вовк on 08.02.2025.
+//
+import SwiftUI
+import Combine
+
 // Job Queue Manager
 class JobQueueManager: ObservableObject {
-    @Published var jobQueue: [SuffixSearchJob] = []
-    @Published var history: [SuffixSearchJob] = []
+    @Published var jobQueue: [SuffixSearchJobModel] = []
+    @Published var history: [SuffixSearchJobModel] = []
     @Published var summary: String = "Сводка пуста."
     
     // Добавление новой задачи в очередь
     func addJob(text: String) {
-        let job = SuffixSearchJob(text: text)
+        let job = SuffixSearchJobModel(text: text)
+        guard !history.contains(where: { $0.text == text }) else { return }
         jobQueue.append(job)
-        processJobs()
+        Task {
+            await processJobs()
+        }
     }
     
     // Обработка очереди задач
@@ -22,7 +34,7 @@ class JobQueueManager: ObservableObject {
     }
     
     // Выполнение одной задачи
-    private func performJob(_ job: SuffixSearchJob) async {
+    private func performJob(_ job: SuffixSearchJobModel) async {
         let startTime = Date()
         
         // Асинхронное выполнение поиска суффиксов
@@ -33,7 +45,7 @@ class JobQueueManager: ObservableObject {
         let executionTime = endTime.timeIntervalSince(startTime)
         
         // Обновляем данные задачи
-        let updatedJob = SuffixSearchJob(
+        let updatedJob = SuffixSearchJobModel(
             text: job.text,
             suffixes: suffixArray,
             statistics: statistics,

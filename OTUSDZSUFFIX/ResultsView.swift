@@ -1,6 +1,14 @@
+//
+//  ResultsView.swift
+//  OTUSDZSUFFIX
+//
+//  Created by Вячеслав Вовк on 08.02.2025.
+//
+import SwiftUI
+
 // Экран с результатами анализа
 struct ResultsView: View {
-    let job: SuffixSearchJob
+    let job: SuffixSearchJobModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -23,4 +31,9 @@ struct ResultsView: View {
         .navigationTitle("Результаты для '\(job.text)'")
         .padding()
     }
+}
+
+
+#Preview {
+    ResultsView(job: SuffixSearchJobModel(text: "abra", suffixes: ["abra", "abeacaed"] , statistics: ["abra": 1, "abr": 3], executionTime: 2))
 }

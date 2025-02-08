@@ -61,6 +61,11 @@ func calculateSuffixStatistics(suffixArray: [String]) -> [String: Int] {
 }
 
 struct ContentView: View {
+    
+    @StateObject private var jobManager = JobQueueManager()
+    @State private var showHistory: Bool = false
+    @State private var showResult: Bool = false
+    
     @State private var searchText = ""
     @State private var text = "abracadabraabrabrbrabarababraabraabrabrabra"
     @State private var suffixArray: [String] = []
@@ -69,71 +74,46 @@ struct ContentView: View {
     @State private var searchResults: [String] = []
     @State private var textPublisher = PassthroughSubject<String, Never>()
     var body: some View {
-        VStack {
-            VStack(spacing: 20) {
+        NavigationStack {
+            VStack {
+                VStack(spacing: 20) {
                     
-                    Text("Суффиксный массив:")
-                        .font(.headline)
-                    
-                    Picker("Suffix Category", selection: $selectedType) {
-                        ForEach(SelectionType.allCases) { category in
-                            Text(category.title).tag(category)
-                       }
-                    }
-                    .pickerStyle(.segmented)
-                
-                    if selectedType == .all {
+                    HStack {
                         
-                        TextField("Введите строку для поиска", text: $searchText)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            .onReceive(Just(searchText)) { value in
-                                // Отправляем новое значение в издатель
-                                textPublisher.send(value)
-                            }
-                        
-                        if searchText.isEmpty {
-                            List(suffixArray, id: \.self) { suffix in
-                                Text(suffix)
-                            }
-                        }else {
-                            List(searchResults, id: \.self) { suffix in
-                                Text(suffix)
-                            }
-                        }
-                    }else {
-                        if !suffixStatistics.isEmpty {
-                            Text("Статистика совпадений суффиксов:")
-                                .font(.headline)
-                            List {
-                                ForEach(suffixStatistics
-                                    .sorted { $0.value > $1.value }
-                                    .map { "\($0.key) – \($0.value)" },
-                                        id: \.self) { item in
-                                    Text(item)
-                                }
-                            }
+                        Spacer()
+                        Button("History") {
+                            showHistory.toggle()
                         }
                     }
-                
-            }
-            
-            Spacer()
-            TextField("Введите строку", text: $text,  axis: .vertical)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-            Spacer()
-            
-            Button("Button") {
-                suffixArray = createSuffixArray(from: text)
-                suffixStatistics = calculateSuffixStatistics(suffixArray: suffixArray)
-            }
-            .buttonStyle(.borderedProminent)
-        }
-        .padding()
-        
-        .onAppear {
-                    setupSearch()
+                    
                 }
+                
+                Spacer()
+                TextField("Введите строку", text: $text,  axis: .vertical)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding()
+                Spacer()
+                
+                Button("Button") {
+                    jobManager.addJob(text: text)
+                    showResult.toggle()
+                }
+                .buttonStyle(.borderedProminent)
+            }
+            .padding()
+            .navigationDestination(isPresented: $showResult) {
+                if let job = jobManager.history.first(where: { $0.text == text }) {
+                    ResultsView(job: job)
+                }
+            }
+            .navigationDestination(isPresented: $showHistory) {
+                HistoryScreen()
+                    .environmentObject(jobManager)
+            }
+        }
+        .onAppear {
+            setupSearch()
+        }
     }
     
     // Настройка поиска с debounce
